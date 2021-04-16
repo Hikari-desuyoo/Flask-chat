@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+
+{% block head %}
+<title>Flask Chat!</title>
+{% endblock %}
+
+{% block body %}
+<h1>Flask chat!</h1>
+
+<div style="display:inline">
+    Você está digitando mensagens como:
+	<form id="form" style="display:inline" method="POST">
+		<input type="text" name="user" value={{ user_info.get("user","Anônimo") }}>
+		<div style="display:inline" class=notification>{{user_info.get("notification","")}}</div>
+		
+</div>
+<div id="chatbox" style="overflow:auto">
+	{% for msg in history %}
+	<div class={{ "user" if msg.user!="Anônimo" and msg.user==user_info.get("user","Anônimo") else "other_user" }}>
+		{{ "({})[{}]:{}".format(msg.date.strftime("%H:%M"), msg.user, msg.content) }}
+	<div><br>
+	{% endfor %}
+</div>
+<input id="msg_input" name="message" type="text" placeholder="Digite algo! :>">
+<input type="submit" value="POSTAR">
+</form>
+{% endblock %}
+
+{% block javascript %}
+var chatbox = document.getElementById("chatbox")
+chatbox.style.height = (window.screen.height-parseInt(window.screen.height/2.6)).toString()+'px';
+chatbox.scrollTop = chatbox.scrollHeight - chatbox.clientHeight;
+
+var msg_input = document.getElementById("msg_input")
+console.log(chatbox.style.width)
+msg_input.style.width = (chatbox.offsetWidth-5-100).toString()+"px"
+msg_input.focus()
+{% endblock %}
