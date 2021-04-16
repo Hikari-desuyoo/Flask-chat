@@ -1,12 +1,46 @@
 from flask import Flask, render_template, url_for, request, redirect
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
+from flask_socketio import SocketIO, emit
 import os
 
 msg_char_limit = 1500
 
 app = Flask(__name__)
 app.config["SQLALCHEMY_DATABASE_URI"] = 'sqlite:///chat_history.db'
+app.config["SECRET_KEY"] = 'secret'
+
+#socketio
+socketio = SocketIO(app)
+
+@socketio.on('message')
+def handle_message(msg_list):
+    print("received", msg_list)
+
+    #finds if received message is invalid or not
+    user_info={}
+    user_info['user'] = user = msg_list[0]
+    user_info['message'] = msg_input = msg_list[1]
+    invalid_cases = [len(msg_input)>msg_char_limit, len(msg_input)==0, len(user)==0]
+    invalid_text = [f"Sua mensagem excede o número máximo de caracteres([msg_char_limit])",
+                    "Você não pode enviar uma mensagem em branco",
+                    "Você não pode usar um nome de usuário em branco"]
+
+    invalid = False
+    for i in range(3):
+        if invalid_cases[i]:
+            #invalid text will be shown on the html
+            user_info["notification"] = invalid_text[i]
+            invalid = True
+                
+    if not invalid:
+        #accepts message on database
+        new_msg = Message(content=msg_input, user=user)
+        chat_history.session.add(new_msg)
+        chat_history.session.commit()
+        
+        emit("clear", "")#clear input field if valid msg
+        emit("message", msg_list, broadcast=True)
 
 #setting database for chat history
 chat_history = SQLAlchemy(app)
@@ -18,34 +52,9 @@ class Message(chat_history.Model):
             
 @app.route('/', methods=["POST", "GET"])
 def chat_page():
+    #starts html with chat history
     user_info = {}
     history = Message.query.order_by(Message.date).all()
-    if request.method == 'POST':
-        #finds if received message is invalid or not
-        user_info['user'] = user = request.form['user']
-        user_info['message'] = msg_input = request.form['message']
-        invalid_cases = [len(msg_input)>msg_char_limit, len(msg_input)==0, len(user)==0]
-        invalid_text = [f"Sua mensagem excede o número máximo de caracteres([msg_char_limit])",
-                        "Você não pode enviar uma mensagem em branco",
-                        "Você não pode usar um nome de usuário em branco"]
-
-        invalid = False
-        for i in range(3):
-            if invalid_cases[i]:
-                #invalid text will be shown on the html
-                user_info["notification"] = invalid_text[i]
-                invalid = True
-                
-        if not invalid:
-            #accepts message on database
-            content = f"[{user}]: {msg_input}"
-            new_msg = Message(content=msg_input, user=user)
-
-            chat_history.session.add(new_msg)
-            chat_history.session.commit()
-            history = Message.query.order_by(Message.date).all()
-        
-
     return render_template('chat.html', history=history, user_info=user_info)
 
     
@@ -63,4 +72,5 @@ def dated_url_for(endpoint, **values):
             values['q'] = int(os.stat(file_path).st_mtime)
     return url_for(endpoint, **values)
 
-app.run(debug = True)
+
+socketio.run(app, debug = True)

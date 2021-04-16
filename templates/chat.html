@@ -2,15 +2,41 @@
 
 {% block head %}
 <title>Flask Chat!</title>
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js" integrity="sha512-q/dWJ3kcmjBLU4Qc47E4A9kTB4m3wuTY7vkFJDTZKjTs8jhyGQnaUrxa0Ytd0ssMZhbNua9hE+E7Qv1j+DyZwA==" crossorigin="anonymous"></script>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
 {% endblock %}
 
 {% block body %}
+<script type="text/javascript">
+	$(document).ready(function(){
+		var socket = io.connect("http://127.0.0.1:5000/");
+
+		socket.on("connect", function(){
+			console.log("Conectado")
+			socket.emit("message", ["Sistema","Um usuário se conectou"])
+		});
+
+		socket.on("message", function(msg_list){
+			console.log(msg_list);
+			msg = "<div class=other_user>["+msg_list[0]+"]:"+msg_list[1]+"</div>";
+			$("#chatbox").append(msg);
+		});
+
+		socket.on("clear", function(unimportant){
+			$("#msg_input").val("")
+		})
+
+		$("#send_input").click(function(){
+			socket.emit("message", [$("#user_input").val(), $("#msg_input").val()])
+		})
+	});
+</script>
+
 <h1>Flask chat!</h1>
 
 <div style="display:inline">
     Você está digitando mensagens como:
-	<form id="form" style="display:inline" method="POST">
-		<input type="text" name="user" value={{ user_info.get("user","Anônimo") }}>
+		<input id="user_input" type="text" name="user" value={{ user_info.get("user","Anônimo") }}>
 		<div style="display:inline" class=notification>{{user_info.get("notification","")}}</div>
 		
 </div>
@@ -21,18 +47,21 @@
 	<div><br>
 	{% endfor %}
 </div>
-<input id="msg_input" name="message" type="text" placeholder="Digite algo! :>">
-<input type="submit" value="POSTAR">
-</form>
+<div>
+	<input id="msg_input" name="message" type="text" placeholder="Digite algo! :>">
+	<input id="send_input" type="button" value="ENVIAR">
+</div>
 {% endblock %}
 
 {% block javascript %}
-var chatbox = document.getElementById("chatbox")
-chatbox.style.height = (window.screen.height-parseInt(window.screen.height/2.6)).toString()+'px';
-chatbox.scrollTop = chatbox.scrollHeight - chatbox.clientHeight;
+<script language="javascript">
+	var chatbox = document.getElementById("chatbox")
+	chatbox.style.height = (window.screen.height-parseInt(window.screen.height/2.6)).toString()+'px';
+	chatbox.scrollTop = chatbox.scrollHeight - chatbox.clientHeight;
 
-var msg_input = document.getElementById("msg_input")
-console.log(chatbox.style.width)
-msg_input.style.width = (chatbox.offsetWidth-5-100).toString()+"px"
-msg_input.focus()
+	var msg_input = document.getElementById("msg_input")
+	console.log(chatbox.style.width)
+	msg_input.style.width = (chatbox.offsetWidth-5-100).toString()+"px"
+	msg_input.focus()
+</script>
 {% endblock %}
