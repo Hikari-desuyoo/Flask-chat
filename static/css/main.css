@@ -1,5 +1,9 @@
 body{
-	font-family:consolas;
+	font-family:'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
+}
+
+.title{
+	font-family:initial;
 }
 
 #chatbox{
@@ -8,10 +12,15 @@ body{
 }
 
 .user{
-	color:#00ec27
+	color:#ecffa6
 }
 
 .other_user{
+	color:white;
+}
+
+.system{
+	color:aquamarine;
 }
 
 .notification{
