@@ -10,7 +10,7 @@ $(document).ready(function(){
     } 
 
     //deals with socket
-    var socket = io.connect("http://127.0.0.1:5000/");
+    var socket = io.connect("https://flask-chat-hikaridesuyoo.herokuapp.com/");
 
     socket.on("connect", function(){
         console.log("Conectado")

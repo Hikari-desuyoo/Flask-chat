@@ -85,4 +85,4 @@ def dated_url_for(endpoint, **values):
             values['q'] = int(os.stat(file_path).st_mtime)
     return url_for(endpoint, **values)
 
-socketio.run(app, debug = True)
+socketio.run(app, host="0.0.0.0", port=8080)
