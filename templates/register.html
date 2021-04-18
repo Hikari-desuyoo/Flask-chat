@@ -1,0 +1,18 @@
+{% extends 'base.html' %}
+
+{% block head %}
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+{% endblock %}
+
+{% block body %}
+<div id=#notification>{{ invalid }}</div>
+<form method="POST">
+    <input name="user_input" type="text" placeholder="Escolha um nome!"><br>
+    <input name="pwd_input" type="password" placeholder="Agora, uma senha :>"><br>
+    <input name="cofirm_pwd_input" type="password" placeholder="Esqueci a senha, fala de novo"><br>
+    <input type="submit" value="Registrar">
+</form>
+{% endblock %}
+
+{% block javascript %}
+{% endblock %}

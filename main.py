@@ -1,26 +1,33 @@
-from flask import Flask, render_template, url_for, request, redirect
-from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
+from flask import Flask, render_template, url_for, request, redirect
+from flask_login import LoginManager, UserMixin, login_user
 from flask_socketio import SocketIO, emit
+from flask_sqlalchemy import SQLAlchemy
 import os
 
 msg_char_limit = 1500
 
 app = Flask(__name__)
 app.config["SQLALCHEMY_DATABASE_URI"] = 'sqlite:///chat_history.db'
+app.config["SQLALCHEMY_BINDS"] = {
+    'chat_history': 'sqlite:///chat_history.db',
+    'login': 'sqlite:///login.db'
+}
+
 app.config["SECRET_KEY"] = 'secret'
 
 #setting database for chat history
-chat_history = SQLAlchemy(app)
+db = SQLAlchemy(app)
 
-class Message(chat_history.Model):
-    content = chat_history.Column(chat_history.String(msg_char_limit))
-    user = chat_history.Column(chat_history.String(20))
-    date = chat_history.Column(chat_history.DateTime, default=datetime.utcnow, primary_key=True)
+class Message(db.Model):
+    __bind_key__ = 'chat_history'
+    content = db.Column(db.String(msg_char_limit))
+    user = db.Column(db.String(20))
+    date = db.Column(db.DateTime, default=datetime.utcnow, primary_key=True)
 
 
 #socketio
-socketio = SocketIO(app)
+socketio = SocketIO(app, cors_allowed_origins="*")
 
 @socketio.on('message')
 def handle_message(msg_list):
@@ -39,15 +46,16 @@ def handle_message(msg_list):
     for i in range(3):
         if invalid_cases[i]:
             #invalid text will be shown on the html
-            user_info["notification"] = invalid_text[i]
+            emit("invalid_msg", invalid_text[i])
             invalid = True
+            
                 
     if not invalid:
         #accepts message on database
         new_msg = Message(content=msg_input, user=user)
         user_info["date"] = datetime.utcnow().strftime("%H:%M")
-        chat_history.session.add(new_msg)
-        chat_history.session.commit()
+        db.session.add(new_msg)
+        db.session.commit()
         
         emit("clear", "")#clear input field if valid msg
         emit("message", user_info, broadcast=True)
@@ -56,20 +64,56 @@ def handle_message(msg_list):
 def handle_system_msg(msg):
     print("from system:", msg)
     new_msg = Message(content=msg, user="")
-    chat_history.session.add(new_msg)
-    chat_history.session.commit()
+    db.session.add(new_msg)
+    db.session.commit()
     msg = f"({datetime.utcnow().strftime('%H:%M')}){msg}"
     emit("system", msg, broadcast=True)
+
+#login
+login_manager = LoginManager()
+login_manager.init_app(app)
+
+class User(UserMixin, db.Model):
+    __bind_key__ = "login"
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(30), unique=True)
+    password = db.Column(db.String(30))
+
+db.create_all()
+
+@login_manager.user_loader
+def load_user(user_id):
+    return User.query.get(int(user_id))
 
 
 #routing
 @app.route('/', methods=["POST", "GET"])
-def chat_page():
-    #starts html with chat history
-    user_info = {}
-    history = Message.query.order_by(Message.date).all()
-    return render_template('chat.html', history=history, user_info=user_info)
+def home():
+    if request.method == "POST":
+        user = User.query.filter_by(username=request.form["user_input"]).first()
+        if user!=None and user.password == request.form["pwd_input"]:
+            login_user(user)
+            history = Message.query.order_by(Message.date).all()
+            user_info = {"user":request.form["user_input"]}
+            return render_template('chat.html', user_info=user_info, history=history)
+    return render_template('home.html')
 
+@app.route('/register', methods=["POST", "GET"])
+def register():
+    invalid = ""
+    if request.method == "POST":
+        new_username = request.form["user_input"]
+        if new_username=="":
+            invalid = "Digite um nome"
+        elif User.query.filter_by(username=new_username).first() != None:
+            invalid = "Esse nome já está em uso"
+        
+        if not invalid:
+            new_user = User(username=request.form["user_input"], password=request.form["pwd_input"])
+            db.session.add(new_user)
+            db.session.commit()
+            return redirect("/")
+    return render_template('register.html', invalid=invalid)
     
 #no idea of what this is, just copy and pasted because i was having problems with updating css
 @app.context_processor
@@ -85,4 +129,4 @@ def dated_url_for(endpoint, **values):
             values['q'] = int(os.stat(file_path).st_mtime)
     return url_for(endpoint, **values)
 
-socketio.run(app, host="0.0.0.0")
+socketio.run(app, debug=True)
