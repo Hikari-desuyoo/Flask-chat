@@ -5,11 +5,42 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+
+    {% set json_preferences = current_user.get_preferences() %}
+    {% set color1 = json_preferences.get("color1", 'rgba(142, 241, 117, 1)') %}
+    {% set color2 = json_preferences.get("color2", 'rgba(42, 79, 148, 1)')%}
+    <style>
+    {{
+        "#formbox .greenbutton:active, #chatbox, #input_div, body
+        {background-color:"+color2+"}"+
+
+        "#formbox .greenbutton, .greenbutton, .uppertab, #formbox input
+        {background-color:"+color1+"}"+
+
+        "#formbox .greenbutton, .greenbutton, #formbox, #chatbox, #input_div, #formbox input
+        {border-color:"+color1+"}"+
+
+        "#formbox .greenbutton:active, #backbutton
+        {color:"+color1+"}"
+    }}
+    </style>
+
     {% block head %}{% endblock %}
 </head>
 <body>
+    <div class=uppertab>
+        <h1 class="title" id="moving_title">Flask Chat!!!</h1>
+    </div>
     {% block body %}{% endblock %}
 </body>
 
-{% block javascript %}{% endblock %}
+<script type="text/javascript">
+    $(document).ready(function(){
+        $(".uppertab").animate({height: '5rem'}, 700)
+    })
+</script>
+
+{% block javascript %}
+{% endblock %}
 </html>

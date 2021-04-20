@@ -1,22 +1,27 @@
 {% extends 'base.html' %}
 
 {% block head %}
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
 {% endblock %}
 
 {% block body %}
-<h1 class="title" style="text-align:center;">Flask Chat!!!</h1>
 <div style="text-align:center;">
-<p>Esse é um pequeno chat com o propósito de ajudar Hikari a estudar python, javascript, HTML, flask, entre outros.</p>
-<p>Entre e deixe alguma coisa para ela ler!</p>
-<p>Faça seu login para continuar :></p>
-<form method="POST">
-    <input name="user_input" type="text" placeholder="Escolha um nome!"><br>
-    <input name="pwd_input" type="password"><br>
-    <input type="submit" value="Logar">
-</form>
-    <a href="/register">
-        Registrar
-    </a>
+
+<div id="homebox">
+    <p>Esse é um pequeno chat com o propósito de ajudar Hikari a estudar python, javascript, HTML, flask, entre outros.</p>
+    <p>Entre e deixe alguma coisa para ela ler!</p>
+    <p>Faça seu login para continuar :></p>
+    <p>Caso ainda não tenha uma conta, registre-se!</p>
+    <div>
+        <form action="/register">
+            <input type="submit" class="greenbutton" value="Registrar" />
+        </form>
+        <br>
+        <form action="/login">
+            <input type="submit" class="greenbutton" value="Logar" />
+        </form>
+    </div>
+</div>
 </div>
 
 {% endblock %}

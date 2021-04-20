@@ -1,8 +1,9 @@
 from datetime import datetime
 from flask import Flask, render_template, url_for, request, redirect
-from flask_login import LoginManager, UserMixin, login_user
+from flask_login import current_user, LoginManager, UserMixin, login_user, login_required
 from flask_socketio import SocketIO, emit
 from flask_sqlalchemy import SQLAlchemy
+import json
 import os
 
 msg_char_limit = 1500
@@ -29,6 +30,8 @@ class Message(db.Model):
 #socketio
 socketio = SocketIO(app, cors_allowed_origins="*")
 
+
+#chat sockets
 @socketio.on('message')
 def handle_message(msg_list):
     print("received", msg_list)
@@ -69,6 +72,15 @@ def handle_system_msg(msg):
     msg = f"({datetime.utcnow().strftime('%H:%M')}){msg}"
     emit("system", msg, broadcast=True)
 
+#check if username exists socket
+@socketio.on('check_user')
+def handle_system_msg(username):
+    user = User.query.filter_by(username=username).first()
+    if user==None:
+        emit("check_user", False)
+    else:
+        emit("check_user", True)
+
 #login
 login_manager = LoginManager()
 login_manager.init_app(app)
@@ -78,8 +90,17 @@ class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(30), unique=True)
     password = db.Column(db.String(30))
+    json_preferences = db.Column(db.String(500))
 
-db.create_all()
+    def get_preferences(self):
+        return json.loads(self.json_preferences)
+
+
+@login_manager.unauthorized_handler
+def unauthorized():
+    return redirect("/")
+
+#db.create_all()
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -89,14 +110,40 @@ def load_user(user_id):
 #routing
 @app.route('/', methods=["POST", "GET"])
 def home():
+    return render_template('home.html')
+
+@app.route('/login', methods=["POST", "GET"])
+def login():
     if request.method == "POST":
         user = User.query.filter_by(username=request.form["user_input"]).first()
         if user!=None and user.password == request.form["pwd_input"]:
             login_user(user)
-            history = Message.query.order_by(Message.date).all()
-            user_info = {"user":request.form["user_input"]}
-            return render_template('chat.html', user_info=user_info, history=history)
-    return render_template('home.html')
+            return redirect("/chat")
+            
+        else:
+            return render_template('login.html', error=True)
+    return render_template('login.html', error=False)
+
+@app.route('/chat', methods=["POST", "GET"])
+@login_required
+def chat():
+    user_info = {"user":current_user.username}
+    history = Message.query.order_by(Message.date).all()
+    return render_template('chat.html', user_info=user_info, history=history)
+
+@app.route('/settings', methods=["POST", "GET"])
+@login_required
+def settings():
+    json_preferences = json.loads(current_user.json_preferences)
+    print(current_user.json_preferences)
+    if request.method == "POST":
+        for key in request.form.keys():
+            json_preferences[key] = request.form[key]
+        current_user.json_preferences = json.dumps(json_preferences)
+        db.session.commit()
+    print(current_user.json_preferences)
+    
+    return render_template('settings.html', user=current_user, json_preferences=json_preferences)
 
 @app.route('/register', methods=["POST", "GET"])
 def register():
@@ -109,11 +156,11 @@ def register():
             invalid = "Esse nome já está em uso"
         
         if not invalid:
-            new_user = User(username=request.form["user_input"], password=request.form["pwd_input"])
+            new_user = User(username=request.form["user_input"], password=request.form["pwd_input"], json_preferences="{}")
             db.session.add(new_user)
             db.session.commit()
-            return redirect("/")
-    return render_template('register.html', invalid=invalid)
+            return redirect("/chat")
+    return render_template('register.html')
     
 #no idea of what this is, just copy and pasted because i was having problems with updating css
 @app.context_processor

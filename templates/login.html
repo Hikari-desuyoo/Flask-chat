@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+
+{% block head %}
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+{% endblock %}
+
+{% block body %}
+<div id="formbox">
+    <form method="POST">
+        Seu nome de usuário<br>
+        <input name="user_input" type="text" placeholder="fulano123"><br><br>
+
+        Sua senha<br>
+        <input name="pwd_input" type="password" placeholder="*****"><br><br>
+
+        <input class="greenbutton" type="submit" value="Logar">
+        <p class=bad_notification>{{ "Você inseriu dados errados" if error else '' }}</p>
+    </form>
+</div>
+</div>
+
+<form action="/">
+    <input type="submit" id="backbutton" value="<<" />
+</form>
+
+{% endblock %}
+
+{% block javascript %}
+{% endblock %}

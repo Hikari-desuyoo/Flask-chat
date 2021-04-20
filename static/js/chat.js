@@ -1,6 +1,8 @@
 $(document).ready(function(){
     //define all messages classes accordingly
-    var user = $("#user_input").val();
+    var user = $("#username").text();
+    console.log("user is")
+    console.log(user)
     var all_msg = $("#chatbox > ."+user+"_msg");
   
     for(var i=0; i<all_msg.length; i++){
@@ -10,11 +12,11 @@ $(document).ready(function(){
     } 
 
     //deals with socket
-    var socket = io.connect("https://flask-chat-hikaridesuyoo.herokuapp.com/");
+    var socket = io.connect("http://127.0.0.1:5000/");
 
     socket.on("connect", function(){
         console.log("Conectado")
-        socket.emit("system_msg", "Um usuário se conectou")
+        socket.emit("system_msg", user+" se conectou")
     });
 
     function display_msg(msg){
@@ -24,13 +26,11 @@ $(document).ready(function(){
 
     function scroll(){
         var chatbox = document.getElementById("chatbox")
-        chatbox.style.height = (window.screen.height-parseInt(window.screen.height/2.6)).toString()+'px';
         chatbox.scrollTop = chatbox.scrollHeight - chatbox.clientHeight;
     }
 
     socket.on("message", function(msg_dict){
         console.log(msg_dict);
-        user = $("#user_input").val()
         if(msg_dict["user"]==user){
             var msg = "<div class=user>("
         }else{
@@ -39,6 +39,10 @@ $(document).ready(function(){
         msg += msg_dict["date"]+")["+msg_dict["user"]+"]:"+msg_dict["message"]+"</div>";
         display_msg(msg);
     });
+
+    socket.on("invalid_msg", function(notification){
+        $("#notification").text(notification);
+    })
 
     socket.on("system", function(msg){
         console.log(msg);
@@ -51,7 +55,8 @@ $(document).ready(function(){
     })
 
     function send_msg(){
-        socket.emit("message", [$("#user_input").val(), $("#msg_input").val()])
+        $("#notification").text("");
+        socket.emit("message", [user, $("#msg_input").val()])
     }
 
     $("#send_input").click(send_msg)//send msg

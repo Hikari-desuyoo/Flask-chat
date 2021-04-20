@@ -1,0 +1,34 @@
+{% extends 'base.html' %}
+
+{% block head %}
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+<script src={{ url_for('static', filename="js/jscolor.js") }}></script>
+
+{% endblock %}
+
+{% block body %}
+<div id="formbox">
+    <form method="POST">
+        Seu nome de usuário é 
+        <div style="font-size:4rem;"> {{user.username}}</div><br>
+        
+        <input style="width:20px; background-color:black; color:black; border-style: solid; border-color:black" name="color1" data-jscolor="{preset:'dark', width:250, paletteCols:15, value:'{{ json_preferences.get("color1",'rgba(142, 241, 117, 1)') }}'}"></button>
+        Cor de fundo #1
+
+        <input style="width:20px; background-color:black; color:black; border-style: solid; border-color:black" name="color2" data-jscolor="{preset:'dark', width:250, paletteCols:15, value:'{{ json_preferences.get("color2",'rgba(42, 79, 148, 1)') }}'}"></button>
+        Cor de fundo #2
+        
+        <br><br>
+        <input class="greenbutton" type="submit" value="Aplicar">
+    </form>
+</div>
+</div>
+
+<form action="/chat">
+    <input type="submit" id="backbutton" value="<<" />
+</form>
+
+{% endblock %}
+
+{% block javascript %}
+{% endblock %}

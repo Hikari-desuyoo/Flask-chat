@@ -1,18 +1,84 @@
 {% extends 'base.html' %}
 
 {% block head %}
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js" integrity="sha512-q/dWJ3kcmjBLU4Qc47E4A9kTB4m3wuTY7vkFJDTZKjTs8jhyGQnaUrxa0Ytd0ssMZhbNua9hE+E7Qv1j+DyZwA==" crossorigin="anonymous"></script>
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
 {% endblock %}
 
 {% block body %}
-<div id=#notification>{{ invalid }}</div>
-<form method="POST">
-    <input name="user_input" type="text" placeholder="Escolha um nome!"><br>
-    <input name="pwd_input" type="password" placeholder="Agora, uma senha :>"><br>
-    <input name="cofirm_pwd_input" type="password" placeholder="Esqueci a senha, fala de novo"><br>
-    <input type="submit" value="Registrar">
+
+<form method="POST" id="formbox">
+    Escolha um nome!<br>
+    <input id="user_input" name="user_input" type="text" ><br><br>
+    Agora, uma senha :<br>
+    <input id="pwd_input" name="pwd_input" type="password"><br><br>
+    Esqueci a senha, fala de novo<br>
+    <input id="cofirm_pwd_input" name="cofirm_pwd_input" type="password"><br><br>
+    <input type="button" class="greenbutton" id="register_button" value="Registrar">
+    <p id="check_user"></p>
+    <p id="check_pwd" class="bad_notification"></p>
+</form>
+
+<form action="/">
+    <input type="submit" id="backbutton" value="<<" />
 </form>
 {% endblock %}
 
 {% block javascript %}
+<script type="text/javascript">
+    $(document).ready(function(){
+        var socket = io.connect("http://127.0.0.1:5000/");
+        var user_available = false;
+        socket.on("check_user", function(boolean){
+            if(boolean){
+                var notification="Nome de usuário indisponível"
+                var oldclass = "good_notification"
+                var newclass = "bad_notification" 
+                user_available = false
+            }else{
+                var notification="Nome de usuário disponível"
+                var newclass = "good_notification"
+                var oldclass = "bad_notification" 
+                user_available=true
+            }
+            $("#check_user").removeClass(oldclass)
+            $("#check_user").addClass(newclass)
+            $("#check_user").text(notification)
+        });
+
+        socket.emit("check_user", $("#user_input").val())
+
+        $("#user_input").on("input", function(){
+            socket.emit("check_user", $("#user_input").val())
+        });
+
+        function check_same_pwd(){
+            if($("#cofirm_pwd_input").val()!=$("#pwd_input").val()){
+                same_pwd = false
+                $("#check_pwd").css("display","block")
+                $("#check_pwd").text("As senhas estão diferentes")
+            }else{
+                $("#check_pwd").css("display","none")
+                same_pwd = true;
+            }
+        }
+        
+        $("#pwd_input").on("input", check_same_pwd);
+        $("#cofirm_pwd_input").on("input", check_same_pwd);
+
+        $("#register_button").on("click", function(){
+            var valid=true;
+            if(same_pwd==false||$("#pwd_input").val()==""||user_available==false){
+                console.log(same_pwd==false)
+                console.log($("#pwd_input").val()=="")
+                console.log(user_available==false)
+                valid=false
+            }
+            if(valid){
+                console.log("submit")
+                $("#formbox").submit()
+            }
+        });
+    })
+</script>
 {% endblock %}
