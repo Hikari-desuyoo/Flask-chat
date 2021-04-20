@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
 
-    {% set json_preferences = current_user.get_preferences() %}
+    {% set json_preferences = current_user.get_preferences() if current_user.is_authenticated else {} %}
     {% set color1 = json_preferences.get("color1", 'rgba(142, 241, 117, 1)') %}
     {% set color2 = json_preferences.get("color2", 'rgba(42, 79, 148, 1)')%}
     <style>

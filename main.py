@@ -1,6 +1,6 @@
 from datetime import datetime
 from flask import Flask, render_template, url_for, request, redirect
-from flask_login import current_user, LoginManager, UserMixin, login_user, login_required
+from flask_login import current_user, LoginManager, UserMixin, login_user, logout_user, login_required
 from flask_socketio import SocketIO, emit
 from flask_sqlalchemy import SQLAlchemy
 import json
@@ -110,10 +110,14 @@ def load_user(user_id):
 #routing
 @app.route('/', methods=["POST", "GET"])
 def home():
+    if current_user.is_authenticated:
+        return redirect("/chat")
     return render_template('home.html')
 
 @app.route('/login', methods=["POST", "GET"])
 def login():
+    if current_user.is_authenticated:
+        return redirect("/chat")
     if request.method == "POST":
         user = User.query.filter_by(username=request.form["user_input"]).first()
         if user!=None and user.password == request.form["pwd_input"]:
@@ -123,6 +127,20 @@ def login():
         else:
             return render_template('login.html', error=True)
     return render_template('login.html', error=False)
+
+@app.route("/logout", methods=["POST", "GET"])
+@login_required
+def logout():
+    logout_user()
+    return redirect("/")
+
+@app.route("/reset_settings", methods=["POST", "GET"])
+@login_required
+def reset_settings():
+    current_user.json_preferences="{}"
+    db.session.commit()
+    return redirect("/settings")
+
 
 @app.route('/chat', methods=["POST", "GET"])
 @login_required
@@ -147,6 +165,8 @@ def settings():
 
 @app.route('/register', methods=["POST", "GET"])
 def register():
+    if current_user.is_authenticated:
+        return redirect("/chat")
     invalid = ""
     if request.method == "POST":
         new_username = request.form["user_input"]
